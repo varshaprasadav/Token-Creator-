@@ -3,12 +3,12 @@
 // ==========================
 
 const ERC20_FACTORY =
-"0xE3BfdD7Fe375e45d106aCD5B35d33f12ea6565bF";
-const ERC721_ADDRESS = "0xe7EF6174717A02D781878F1dd81ae4FAeD066FD8";
+"0x2E803Fdfc8F1636dC137F0e640564Bfcae4351Ae";
+const ERC721_ADDRESS = "0x7aeCb21A0cd9F87C4eE6Ef2aF32E58Ba053aB326";
 
 
 const ERC1155_ADDRESS =
-"0xe9700C2aB88762349b4E9768533fec5fa7ae325D";
+"0x4D584BA98A2d3BfCBbfB78DACE87940f3452c4BB";
 
 const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIxODY0MjhmNC0wMWFmLTQ5Y2YtYjAwZS0wYTI5Njc1YjY0YjEiLCJlbWFpbCI6InZhcnNoYXByYXNhZDIwMTlAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImZjMzU3ZTM1ZThlMjFkMzBhYjMzIiwic2NvcGVkS2V5U2VjcmV0IjoiNGZlNjQ0MzU0NjhlM2M0ZTdiZWU4MDMyZmFmNzlkMzkyN2M3OWNiNjRlZTRmM2Q1ZWI5NjY5OTFjZjFkZGEzZCIsImV4cCI6MTgxMjc4NTEwMX0.N1O4AlfJS8cf0lnGTjgt1PY60JvB6ivCvWjQ-rj1Lw0";
 
@@ -181,6 +181,71 @@ async function connectWallet() {
         alert("Wallet Connection Failed");
 
     }
+
+}
+
+
+// ==========================
+// HANDLE ACCOUNT / NETWORK SWITCHES
+// ==========================
+// MetaMask lets the user hold several accounts, but it never tells your
+// app when the user switches between them unless you listen for it.
+// Without this, `signer` keeps pointing at whichever account connected
+// first, so switching accounts in MetaMask silently does nothing here.
+
+async function handleAccountsChanged(accounts) {
+
+    if (!accounts || accounts.length === 0) {
+
+        // User disconnected / locked MetaMask
+        signer = undefined;
+
+        document.getElementById("walletAddress").innerText =
+            "Not Connected";
+
+        return;
+
+    }
+
+    try {
+
+        const provider =
+            new ethers.BrowserProvider(window.ethereum);
+
+        signer =
+            await provider.getSigner();
+
+        const address =
+            await signer.getAddress();
+
+        document.getElementById("walletAddress").innerText =
+            "Connected : " + address;
+
+        // Refresh galleries for the newly active account
+        await loadGallery();
+        await load1155Gallery();
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
+
+if (window.ethereum) {
+
+    window.ethereum.on(
+        "accountsChanged",
+        handleAccountsChanged
+    );
+
+    // Safest way to handle a network switch is a full reload,
+    // since contract addresses may only be valid on one chain.
+    window.ethereum.on(
+        "chainChanged",
+        () => window.location.reload()
+    );
 
 }
 
