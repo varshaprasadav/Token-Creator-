@@ -154,6 +154,38 @@ async function connectWallet() {
         const provider =
             new ethers.BrowserProvider(window.ethereum);
 
+        // MetaMask only shows the "choose an account" popup the FIRST
+        // time a site requests access. After that, eth_requestAccounts
+        // just silently returns the same account, with no way to pick
+        // a different one from this button. wallet_requestPermissions
+        // forces MetaMask to re-show the account picker every time.
+        try {
+
+            await window.ethereum.request({
+                method: "wallet_requestPermissions",
+                params: [{ eth_accounts: {} }]
+            });
+
+        } catch (permErr) {
+
+            if (permErr && permErr.code === 4001) {
+
+                // User explicitly closed/cancelled the account picker -
+                // respect that instead of silently reconnecting them.
+                alert("Connection Request Cancelled");
+                return;
+
+            }
+
+            // Some wallets / older MetaMask versions don't support
+            // wallet_requestPermissions - fall back to the normal flow.
+            console.warn(
+                "wallet_requestPermissions not supported, falling back:",
+                permErr
+            );
+
+        }
+
         await provider.send(
             "eth_requestAccounts",
             []
